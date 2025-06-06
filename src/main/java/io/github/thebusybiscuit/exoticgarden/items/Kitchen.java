@@ -4,6 +4,7 @@ import java.util.List;
 
 import javax.annotation.Nonnull;
 import javax.annotation.ParametersAreNonnullByDefault;
+import javax.annotation.Nullable;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -45,6 +46,9 @@ public class Kitchen extends MultiBlockMachine {
         Block dispenser = b.getRelative(BlockFace.DOWN);
 
         Furnace furnace = locateFurnace(dispenser);
+        if (furnace == null) {
+            return;
+        }
         FurnaceInventory furnaceInventory = furnace.getInventory();
 
         Inventory inv = ((Dispenser) dispenser.getState()).getInventory();
@@ -95,16 +99,21 @@ public class Kitchen extends MultiBlockMachine {
         Slimefun.getLocalization().sendMessage(p, "machines.pattern-not-found", true);
     }
 
-    @Nonnull
+    @Nullable
     private static Furnace locateFurnace(@Nonnull Block b) {
         if (b.getRelative(BlockFace.EAST).getType() == Material.FURNACE) {
             return (Furnace) PaperLib.getBlockState(b.getRelative(BlockFace.EAST), false).getState();
-        } else if (b.getRelative(BlockFace.WEST).getType() == Material.FURNACE) {
+        }
+        if (b.getRelative(BlockFace.WEST).getType() == Material.FURNACE) {
             return (Furnace) PaperLib.getBlockState(b.getRelative(BlockFace.WEST), false).getState();
-        } else if (b.getRelative(BlockFace.NORTH).getType() == Material.FURNACE) {
+        }
+        if (b.getRelative(BlockFace.NORTH).getType() == Material.FURNACE) {
             return (Furnace) PaperLib.getBlockState(b.getRelative(BlockFace.NORTH), false).getState();
-        } else {
+        }
+        if (b.getRelative(BlockFace.SOUTH).getType() == Material.FURNACE) {
             return (Furnace) PaperLib.getBlockState(b.getRelative(BlockFace.SOUTH), false).getState();
         }
+
+        return null;
     }
 }
