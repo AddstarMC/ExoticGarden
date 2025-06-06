@@ -61,7 +61,8 @@ public class PlantsListener implements Listener {
                 growStructure(e);
             }
             else {
-                PaperLib.getChunkAtAsync(e.getLocation()).thenRun(() -> growStructure(e));
+                PaperLib.getChunkAtAsync(e.getLocation()).thenRun(() ->
+                        plugin.getServer().getScheduler().runTask(plugin, () -> growStructure(e)));
             }
         }
         else {
@@ -87,8 +88,6 @@ public class PlantsListener implements Listener {
         if (!cfg.getStringList("world-blacklist").contains(world.getName())) {
             Random random = ThreadLocalRandom.current();
 
-            final int worldLimit = getWorldBorder(world);
-
             if (random.nextInt(100) < cfg.getInt("chances.BUSH")) {
                 Berry berry = ExoticGarden.getBerries().get(random.nextInt(ExoticGarden.getBerries().size()));
                 if (berry.getType().equals(PlantType.ORE_PLANT)) return;
@@ -100,13 +99,14 @@ public class PlantsListener implements Listener {
                 int x = chunkX * 16 + random.nextInt(10) + 3;
                 int z = chunkZ * 16 + random.nextInt(10) + 3;
 
-                if ((x < worldLimit && x > -worldLimit) && (z < worldLimit && z > -worldLimit)) {
+                if (withinWorldBorder(world, x, z)) {
                     if (PaperLib.isPaper()) {
                         if (PaperLib.isChunkGenerated(world, chunkX, chunkZ)) {
                             growBush(e, x, z, berry, random, true);
                         }
                         else {
-                            PaperLib.getChunkAtAsync(world, chunkX, chunkZ).thenRun(() -> growBush(e, x, z, berry, random, true));
+                            PaperLib.getChunkAtAsync(world, chunkX, chunkZ).thenRun(() ->
+                                    plugin.getServer().getScheduler().runTask(plugin, () -> growBush(e, x, z, berry, random, true)));
                         }
                     }
                     else {
@@ -137,13 +137,14 @@ public class PlantsListener implements Listener {
                 int x = chunkX * 16 + random.nextInt(16 - tw) + (int) Math.floor(tw/2);
                 int z = chunkZ * 16 + random.nextInt(16 - tl) + (int) Math.floor(tl/2);
 
-                if ((x < worldLimit && x > -worldLimit) && (z < worldLimit && z > -worldLimit)) {
+                if (withinWorldBorder(world, x, z)) {
                     if (PaperLib.isPaper()) {
                         if (PaperLib.isChunkGenerated(world, chunkX, chunkZ)) {
                             pasteTree(e, x, z, tree);
                         }
                         else {
-                            PaperLib.getChunkAtAsync(world, chunkX, chunkZ).thenRun(() -> pasteTree(e, x, z, tree));
+                            PaperLib.getChunkAtAsync(world, chunkX, chunkZ).thenRun(() ->
+                                    plugin.getServer().getScheduler().runTask(plugin, () -> pasteTree(e, x, z, tree)));
                         }
                     }
                     else {
@@ -154,8 +155,15 @@ public class PlantsListener implements Listener {
         }
     }
 
-    private int getWorldBorder(World world) {
-        return (int) world.getWorldBorder().getSize();
+    private boolean withinWorldBorder(World world, int x, int z) {
+        WorldBorder border = world.getWorldBorder();
+        Location center = border.getCenter();
+        int radius = (int) (border.getSize() / 2);
+        int minX = center.getBlockX() - radius;
+        int maxX = center.getBlockX() + radius;
+        int minZ = center.getBlockZ() - radius;
+        int maxZ = center.getBlockZ() + radius;
+        return x < maxX && x > minX && z < maxZ && z > minZ;
     }
 
     private void growStructure(StructureGrowEvent e) {
@@ -294,13 +302,16 @@ public class PlantsListener implements Listener {
     }
 
     private boolean isFlat(Block current) {
-        for (int i = -2; i < 2; i++) {
-            for (int j = -2; j < 2; j++) {
-                for (int k = 0; k < 6; k++) {
-                    Block block = current.getRelative(i, k,j);
-                    if (current.getRelative(i, k, j).getType().isSolid()
-                            || Tag.LEAVES.isTagged(current.getRelative(i, k, j).getType())
-                            || !current.getRelative(i, -1, j).getType().isSolid()) {
+        for (int dx = -2; dx < 2; dx++) {
+            for (int dz = -2; dz < 2; dz++) {
+                Block below = current.getRelative(dx, -1, dz);
+                if (!below.getType().isSolid()) {
+                    return false;
+                }
+
+                for (int dy = 0; dy < 6; dy++) {
+                    Block block = current.getRelative(dx, dy, dz);
+                    if (block.getType().isSolid() || Tag.LEAVES.isTagged(block.getType())) {
                         return false;
                     }
                 }
