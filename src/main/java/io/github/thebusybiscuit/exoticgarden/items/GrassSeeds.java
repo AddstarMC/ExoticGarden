@@ -34,13 +34,13 @@ public class GrassSeeds extends SimpleSlimefunItem<ItemUseHandler> {
                         ItemUtils.consumeItem(e.getItem(), false);
                     }
 
-                    b.setType(Material.GRASS_BLOCK);
+                    b.setType(Material.SHORT_GRASS);
 
                     if (b.getRelative(BlockFace.UP).getType() == Material.AIR) {
-                        b.getRelative(BlockFace.UP).setType(Material.GRASS);
+                        b.getRelative(BlockFace.UP).setType(Material.SHORT_GRASS);
                     }
 
-                    b.getWorld().playEffect(b.getLocation(), Effect.STEP_SOUND, Material.GRASS);
+                    b.getWorld().playEffect(b.getLocation(), Effect.STEP_SOUND, Material.SHORT_GRASS);
                 }
             }
         };
